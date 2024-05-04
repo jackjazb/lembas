@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM day \n\t\tWHERE recipe_id = $1 \n\t\t\tAND date = $2 \n\t\t\tAND EXISTS (\n\t\t\t\tSELECT id FROM recipe WHERE user_id = $3 AND id = $1\n\t\t\t)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Date",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "26e2ee3f0a78c3efa5df0c755341f99ed072778e6a9e1f9c6f3a409def6a75d2"
+}

@@ -1,0 +1,7 @@
+{
+	"name": "New Ingredient",
+	"life": 14,
+	"minimum_quantity": 1,
+	"purchase_quantity": 10,
+	"unit": "g"
+}

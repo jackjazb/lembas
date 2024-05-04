@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO day (recipe_id, date) SELECT $1, $2\n\t\tWHERE EXISTS (\n\t\t\tSELECT id FROM recipe WHERE user_id = $3 AND id = $1\n\t\t)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Date",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c1fcc3d92a229222ca50690d9e3e3b542b9ad3f8ff490e1c81dabf2a13870534"
+}

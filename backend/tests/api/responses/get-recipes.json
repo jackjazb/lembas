@@ -1,0 +1,42 @@
+[
+	{
+		"id": 1,
+		"name": "Five Carrots",
+		"portions": 1,
+		"steps": [],
+		"ingredients": [
+			{
+				"ingredient": {
+					"id": 2000,
+					"name": "Carrot",
+					"user_id": null,
+					"unit": null,
+					"minimum_quantity": 1,
+					"purchase_quantity": 10,
+					"life": 10
+				},
+				"quantity": 5
+			}
+		]
+	},
+	{
+		"id": 2,
+		"name": "Six Carrots",
+		"portions": 1,
+		"steps": [],
+		"ingredients": [
+			{
+				"ingredient": {
+					"id": 2000,
+					"name": "Carrot",
+					"user_id": null,
+					"unit": null,
+					"minimum_quantity": 1,
+					"purchase_quantity": 10,
+					"life": 10
+				},
+				"quantity": 6
+			}
+		]
+	}
+]

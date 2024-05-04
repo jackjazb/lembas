@@ -1,0 +1,457 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  DBUsername:
+    NoEcho: "true"
+    Description: "Database username"
+    Type: String
+    MinLength: "1"
+    MaxLength: "16"
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
+
+  DBPassword:
+    NoEcho: true
+    Description: "The master database password"
+    Type: String
+    MinLength: "8"
+    MaxLength: "32"
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
+
+Resources:
+  # Create a VPC and Internet Gateway, and connect them.
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: "10.0.0.0/16"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Define VPC subnets.
+  # Example here: https://docs.aws.amazon.com/prescriptive-guidance/latest/load-balancer-stickiness/subnets-routing.html
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: "eu-west-1a"
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.2.0/24"
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: "eu-west-1b"
+
+  # Set up subnets and routing.
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  # Create an ECS instance that pulls lembas from ECR on startup.
+  # ECS
+  ECSCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: lembas-cluster
+      CapacityProviders:
+        - FARGATE
+
+  ECS:
+    Type: AWS::ECS::Service
+    DependsOn: ELBListener
+    Properties:
+      ServiceName: "lembas-service"
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: "lembas"
+          ContainerPort: 3000
+          TargetGroupArn: !Ref "TargetGroup"
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !Ref LembasSG
+            - !Ref DatabaseSG
+          Subnets:
+            - !Ref PublicSubnetA
+            - !Ref PublicSubnetB
+
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn:
+      - ECSRole
+      - DBInstance
+    Properties:
+      NetworkMode: awsvpc
+      Cpu: 256
+      Memory: 512
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt ECSRole.Arn
+      ContainerDefinitions:
+        - Name: "lembas"
+          Image: "082401873731.dkr.ecr.eu-west-1.amazonaws.com/lembas:latest"
+          PortMappings:
+            - ContainerPort: 3000
+            - ContainerPort: 5432
+          HealthCheck:
+            Command: ["CMD-SHELL", "curl http://localhost:3000 || exit 1"]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: "lembas"
+              awslogs-create-group: true
+              awslogs-region: "eu-west-1"
+              awslogs-stream-prefix: "ecs"
+          Cpu: 256
+          Memory: 512
+          Essential: True
+          Environment:
+            - Name: DATABASE_URL
+              Value: !Sub
+                - "postgres://${Username}:${Password}@${Endpoint}:5432/lembas"
+                - Username: !Ref DBUsername
+                  Password: !Ref DBPassword
+                  Endpoint: !GetAtt DBInstance.PrivateDnsName
+            - Name: IDP_URL
+              Value: !GetAtt UserPool.ProviderURL
+
+  # Autoscaling setup
+  AutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:DescribeServices
+                  - ecs:UpdateService
+                  - cloudwatch:DeleteAlarms
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:PutMetricAlarm
+                Resource: "*"
+
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: 1
+      MaxCapacity: 4
+      ResourceId: !Join
+        - "/"
+        - - service
+          - lembas-cluster
+          - !GetAtt ECS.Name
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      RoleARN: !GetAtt AutoScalingRole.Arn
+
+  ScaleUpPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: ECSScaleUpPolicy
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 60
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalLowerBound: 0
+            ScalingAdjustment: 1
+
+  ScaleDownPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: ECSScaleDownPolicy
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 60
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalUpperBound: 0
+            ScalingAdjustment: -1
+
+  # This triggers upscaling/downscaling
+  AlarmHighUsage:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: TRUE
+      AlarmActions:
+        - !Ref ScaleUpPolicy
+      OKActions:
+        - !Ref ScaleDownPolicy
+      AlarmDescription: !Sub
+        - "Scale up ECS if requests-per-second exceed 10000"
+        - FargateServiceName: !GetAtt ECS.Name
+      Dimensions:
+        - Name: TargetGroup
+          Value: !GetAtt TargetGroup.TargetGroupFullName
+      Namespace: AWS/ApplicationELB
+      MetricName: RequestCountPerTarget
+      Period: 60
+      Statistic: Sum
+      ComparisonOperator: GreaterThanThreshold
+      # If the alarm is exceeded 2/3 preceding minutes, apply scaling.
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Unit: None
+      Threshold: 30000
+      TreatMissingData: ignore
+
+  # Create an EC2 instance running Postgres
+  DBInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0766b4b472db7e3b9
+      InstanceType: t2.micro
+      KeyName: lembas-key
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - !Ref DatabaseSG
+          SubnetId: !Ref PublicSubnetA
+      UserData:
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash
+            sudo dnf update
+            sudo dnf install postgresql15.x86_64 postgresql15-server -y
+            sudo postgresql-setup --initdb
+
+            # Open Postgres to external traffic
+            echo "listen_addresses='*'" | sudo tee -a /var/lib/pgsql/data/postgresql.conf
+            echo "host all all 0.0.0.0/0 md5" | sudo tee -a /var/lib/pgsql/data/pg_hba.conf
+            echo "host all all ::/0      md5" | sudo tee -a /var/lib/pgsql/data/pg_hba.conf
+
+            # Enable Postgres service and start on boot
+            sudo systemctl start postgresql
+            sudo systemctl enable postgresql
+
+            # Create the specified user and lembas database
+            sudo -u postgres psql -c "CREATE DATABASE lembas;"
+            sudo -u postgres psql -c "CREATE USER ${DBUser} WITH PASSWORD '${DBPassword}';"
+            sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE lembas TO ${DBUser};"
+            sudo -u postgres psql -c "GRANT ALL ON SCHEMA public TO ${DBUser};"
+            sudo -u postgres psql -c "ALTER DATABASE lembas OWNER TO ${DBUser};"
+          - DBUser: !Ref DBUsername
+            DBPassword: !Ref DBPassword
+
+  DatabaseSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupName: "database-sg"
+      GroupDescription: "Allow DB traffic, and HTTPS"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+
+  LembasSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupName: "lembas-sg"
+      GroupDescription: "Allow HTTP(S)"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  ELB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: GatewayAttachment
+    Properties:
+      Scheme: "internet-facing"
+      Name: "lembas"
+      Subnets:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      SecurityGroups:
+        - !Ref LembasSG
+
+  ELBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ELB
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08
+      Certificates:
+        - CertificateArn: arn:aws:acm:eu-west-1:082401873731:certificate/2a4da3ea-ae59-4322-8686-d6be768fe150
+
+  TargetGroup:
+    DependsOn: ELB
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      TargetType: ip
+      Port: 3000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: Z10118292ESGC0BXBRBSY # The hosted zone for lmbas.net
+      Name: "api.lmbas.net"
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt ELB.CanonicalHostedZoneID
+        DNSName: !GetAtt ELB.DNSName
+
+  # Create a service role for ECS so it can publish logs
+  ECSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: "AllowLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:*"
+                Resource: "*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  # Cognito
+  UserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      UsernameConfiguration:
+        CaseSensitive: false
+      AutoVerifiedAttributes:
+        - email
+      UserPoolName: lembas-userpool
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - lembas://recipes
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthScopes:
+        - phone
+        - email
+        - openid
+        - profile
+      SupportedIdentityProviders:
+        - COGNITO
+
+Outputs:
+  ELBDNS:
+    Description: "The DNS value of the load balancer."
+    Value: !GetAtt ELB.DNSName

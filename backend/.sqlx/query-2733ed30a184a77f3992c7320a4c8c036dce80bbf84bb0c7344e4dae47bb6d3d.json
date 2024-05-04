@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n\t\tUPDATE recipe SET\n\t\t\tname = $2,\n\t\t\tportions = $3,\n\t\t\tsteps = $4\n\t\tWHERE id = $1 AND user_id = $5\n\t\t\n\t",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Json",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2733ed30a184a77f3992c7320a4c8c036dce80bbf84bb0c7344e4dae47bb6d3d"
+}

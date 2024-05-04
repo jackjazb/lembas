@@ -1,0 +1,23 @@
+{
+	"name": "Test Recipe",
+	"portions": 2,
+	"ingredients": [
+		{
+			"id": 2001,
+			"quantity": 500
+		},
+		{
+			"id": 2002,
+			"quantity": 375
+		},
+		{
+			"id": 2003,
+			"quantity": 10
+		}
+	],
+	"steps": [
+		"Step One",
+		"Step Two",
+		"Step Three"
+	]
+}

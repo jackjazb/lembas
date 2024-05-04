@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n            id, \n            user_id, \n            name, \n            unit, \n            minimum_quantity, \n            purchase_quantity, \n            life \n        FROM \n            ingredient \n        WHERE \n            LOWER(name) LIKE LOWER($1) AND (user_id IS NULL OR user_id = $2)\n        ORDER BY\n            user_id ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "unit",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "minimum_quantity",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "purchase_quantity",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "life",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f52feb443e637611e155c5e18caa304c0f18ed52c8c0d5f4865b9d048b21afb2"
+}

@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO ingredientschedule (user_id, ingredient_id, start_date, interval) \n\t\tSELECT $1, $2, $3, $4\n\t\tRETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Date",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "e76a616c74175e9747e881d9657bd54150108d7628a78305def8dce8b3bec7d3"
+}
