@@ -1,0 +1,16 @@
+[package]
+name = "lembas-api"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+entity = { path = "../entity" }
+migration = { path = "../migration" }
+axum = "0.7.5"
+tokio = { version = "1.37.0", features = ["full"] }
+tracing-subscriber = "0.3.18"
+tracing = "0.1.40"
+dotenvy = "0.15.7"
+async-graphql-axum = "7.0.5"

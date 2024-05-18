@@ -40,6 +40,13 @@ impl MigrationTrait for Migration {
                     .table(RecipeIngredient::Table)
                     .if_not_exists()
                     .col(
+                        ColumnDef::new(RecipeIngredient::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
                         ColumnDef::new(RecipeIngredient::RecipeId)
                             .integer()
                             .not_null(),
@@ -92,6 +99,7 @@ enum Recipe {
 #[derive(DeriveIden)]
 enum RecipeIngredient {
     Table,
+    Id,
     RecipeId,
     IngredientId,
     Quantity,
