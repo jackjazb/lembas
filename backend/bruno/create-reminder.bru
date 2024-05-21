@@ -1,0 +1,19 @@
+meta {
+  name: create-reminder
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:3000/reminders
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "ingredient_id": 1,
+    "start": "2024-05-01",
+    "interval": 7
+  }
+}
