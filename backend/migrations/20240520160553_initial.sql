@@ -11,6 +11,7 @@ CREATE TABLE "public"."ingredient" (
 	"unit" text,
 	"name" text NOT NULL,
 	"purchase_unit" float NOT NULL,
+	"life" integer NOT NULL,
 	CONSTRAINT "ingredient_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 

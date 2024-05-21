@@ -40,6 +40,7 @@ impl Recipe {
 					ingredient.name, 
 					ingredient.unit, 
 					ingredient.purchase_unit,
+					ingredient.life,
 					recipe_ingredient.quantity)) as "ingredients"
 			
 			FROM recipe 
@@ -75,6 +76,7 @@ impl Recipe {
 					ingredient.name, 
 					ingredient.unit, 
 					ingredient.purchase_unit,
+					ingredient.life,
 					recipe_ingredient.quantity)) as "ingredients"
 			
 			FROM recipe 

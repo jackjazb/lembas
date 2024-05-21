@@ -8,6 +8,7 @@ pub struct Ingredient {
     name: String,
     unit: String,
     purchase_unit: f64,
+    life: i32,
     quantity: Option<f64>,
 }
 
@@ -17,6 +18,7 @@ pub struct IngredientInput {
     name: String,
     unit: String,
     purchase_unit: f64,
+    life: i32,
 }
 
 /// These must be manually implemented to work around the lack of support for Option.
@@ -27,18 +29,27 @@ impl ::sqlx::Type<::sqlx::Postgres> for Ingredient {
 }
 impl<'r> ::sqlx::decode::Decode<'r, ::sqlx::Postgres> for Ingredient
 where
+    // ingredient_id
     i32: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
     i32: ::sqlx::types::Type<::sqlx::Postgres>,
+    // account_id
     Option<i32>: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
     Option<i32>: ::sqlx::types::Type<::sqlx::Postgres>,
+    // name
     String: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
     String: ::sqlx::types::Type<::sqlx::Postgres>,
+    // unit
     String: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
     String: ::sqlx::types::Type<::sqlx::Postgres>,
+    // purchase_unit
     f64: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
     f64: ::sqlx::types::Type<::sqlx::Postgres>,
-    f64: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
-    f64: ::sqlx::types::Type<::sqlx::Postgres>,
+    // life
+    i32: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
+    i32: ::sqlx::types::Type<::sqlx::Postgres>,
+    // quantity
+    Option<f64>: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
+    Option<f64>: ::sqlx::types::Type<::sqlx::Postgres>,
 {
     fn decode(
         value: ::sqlx::postgres::PgValueRef<'r>,
@@ -57,7 +68,7 @@ where
         let name = decoder.try_decode::<String>()?;
         let unit = decoder.try_decode::<String>()?;
         let purchase_unit = decoder.try_decode::<f64>()?;
-
+        let life = decoder.try_decode::<i32>()?;
         // Same here:
         let quantity = decoder.try_decode::<f64>().ok();
         ::std::result::Result::Ok(Ingredient {
@@ -66,6 +77,7 @@ where
             name,
             unit,
             purchase_unit,
+            life,
             quantity,
         })
     }
@@ -96,6 +108,7 @@ impl Ingredient {
 				name, 
 				unit, 
 				purchase_unit,
+				life,
 				purchase_unit as quantity
 			FROM ingredient
 			WHERE account_id = $1 OR account_id IS NULL AND id = $2
@@ -115,8 +128,8 @@ impl Ingredient {
     ) -> Result<Ingredient, sqlx::Error> {
         let (id,): (i32,) = sqlx::query_as(
             r#"
-			INSERT INTO ingredient (account_id, name, unit, purchase_unit)
-			VALUES ($1, $2, $3, $4)
+			INSERT INTO ingredient (account_id, name, unit, purchase_unit, life)
+			VALUES ($1, $2, $3, $4, $5)
 			RETURNING ingredient.id
 			"#,
         )
@@ -124,6 +137,7 @@ impl Ingredient {
         .bind(input.name)
         .bind(input.unit)
         .bind(input.purchase_unit)
+        .bind(input.life)
         .fetch_one(pool)
         .await?;
         Self::find_one(pool, account_id, id).await

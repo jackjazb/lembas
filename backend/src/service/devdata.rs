@@ -10,10 +10,10 @@ pub async fn load_data(pool: &PgPool) -> Result<(), sqlx::Error> {
 		('1', 'jackjazb@gmail.com');
 		SELECT setval('user_id_seq', 1);
 		
-		INSERT INTO "ingredient" ("id", "unit", "name", "purchase_unit") VALUES 
-			('1', 'g', 'Flour', '1500'),
-			('2', 'ml', 'Water', '0'),
-			('3', 'g', 'Sugar', '500');
+		INSERT INTO "ingredient" ("id", "unit", "name", "purchase_unit", "life") VALUES 
+			('1', 'g', 'Flour', '1500', '7'),
+			('2', 'ml', 'Water', '0', '365'),
+			('3', 'g', 'Sugar', '500', '7');
 		SELECT setval('ingredient_id_seq', 3);
 
 		INSERT INTO "reminder" ("id", "account_id",  "ingredient_id", "start", "interval") VALUES
