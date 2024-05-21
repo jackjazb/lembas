@@ -30,13 +30,14 @@ impl Reminder {
 				reminder.start, 
 				reminder.interval, 
 				ingredient.id as ingredient_id, 
+				ingredient.account_id,
 				ingredient.name, 
 				ingredient.unit, 
 				ingredient.purchase_unit,
 				ingredient.purchase_unit as quantity
 			FROM reminder
 			LEFT JOIN ingredient ON ingredient.id = ingredient_id
-			WHERE account_id = $1
+			WHERE reminder.account_id = $1
 		"#,
         )
         .bind(account_id)
@@ -57,13 +58,14 @@ impl Reminder {
 				reminder.start, 
 				reminder.interval,
 				ingredient.id as ingredient_id, 
+				ingredient.account_id,
 				ingredient.name, 
 				ingredient.unit, 
 				ingredient.purchase_unit,
 				ingredient.purchase_unit as quantity
 			FROM reminder
 			LEFT JOIN ingredient ON ingredient.id = ingredient_id
-			WHERE account_id = $1 AND reminder.id = $2
+			WHERE reminder.account_id = $1 AND reminder.id = $2
 			"#,
         )
         .bind(account_id)

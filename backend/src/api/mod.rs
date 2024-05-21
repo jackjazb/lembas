@@ -15,7 +15,7 @@ use crate::{
     api::{
         account::{get_account, get_accounts},
         recipe::{get_recipe, get_recipes},
-        reminder::{create_reminder, get_reminders},
+        reminder::{create_reminder, get_reminder, get_reminders},
     },
     service::devdata::load_data,
 };
@@ -62,6 +62,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
         .route("/recipes", get(get_recipes))
         .route("/recipes/:id", get(get_recipe))
         .route("/reminders", get(get_reminders).post(create_reminder))
+        .route("/reminders/:id", get(get_reminder))
         .layer(middleware::from_fn(auth_middleware))
         .with_state(pool);
     let listener = tokio::net::TcpListener::bind(&server_url).await?;

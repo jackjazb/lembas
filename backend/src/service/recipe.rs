@@ -26,6 +26,7 @@ impl Recipe {
 				recipe.steps,
 				ARRAY_AGG((
 					ingredient.id,
+					ingredient.account_id,
 					ingredient.name, 
 					ingredient.unit, 
 					ingredient.purchase_unit,
@@ -60,6 +61,7 @@ impl Recipe {
 				recipe.steps,
 				ARRAY_AGG((
 					ingredient.id,
+					ingredient.account_id,
 					ingredient.name, 
 					ingredient.unit, 
 					ingredient.purchase_unit,

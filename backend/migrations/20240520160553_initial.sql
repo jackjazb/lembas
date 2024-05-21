@@ -7,6 +7,7 @@ CREATE SEQUENCE ingredient_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CAC
 
 CREATE TABLE "public"."ingredient" (
 	"id" integer DEFAULT nextval('ingredient_id_seq') NOT NULL,
+	"account_id" integer,
 	"unit" text,
 	"name" text NOT NULL,
 	"purchase_unit" float NOT NULL,
@@ -78,6 +79,12 @@ ALTER TABLE
 	ONLY "public"."recipe"
 ADD
 	CONSTRAINT "fk-recipe-account" FOREIGN KEY (account_id) REFERENCES "account"(id) ON DELETE CASCADE NOT DEFERRABLE;
+
+-- Ingredient/Account foreign key.
+ALTER TABLE
+	ONLY "public"."ingredient"
+ADD
+	CONSTRAINT "fk-ingredient-account" FOREIGN KEY (account_id) REFERENCES "account"(id) ON DELETE CASCADE NOT DEFERRABLE;
 
 -- Reminder/Ingredient foreign key.
 ALTER TABLE
