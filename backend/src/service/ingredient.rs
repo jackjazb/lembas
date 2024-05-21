@@ -8,7 +8,15 @@ pub struct Ingredient {
     name: String,
     unit: String,
     purchase_unit: f64,
-    quantity: f64,
+    quantity: Option<f64>,
+}
+
+/// Allows the creation of user ingredients.
+#[derive(serde::Deserialize, Debug)]
+pub struct IngredientInput {
+    name: String,
+    unit: String,
+    purchase_unit: f64,
 }
 
 /// These must be manually implemented to work around the lack of support for Option.
@@ -49,7 +57,9 @@ where
         let name = decoder.try_decode::<String>()?;
         let unit = decoder.try_decode::<String>()?;
         let purchase_unit = decoder.try_decode::<f64>()?;
-        let quantity = decoder.try_decode::<f64>()?;
+
+        // Same here:
+        let quantity = decoder.try_decode::<f64>().ok();
         ::std::result::Result::Ok(Ingredient {
             ingredient_id,
             account_id: user_id,
@@ -71,4 +81,51 @@ impl PgHasArrayType for Ingredient {
     }
 }
 
-impl Ingredient {}
+impl Ingredient {
+    // Fetches a single ingredient by ID.
+    pub async fn find_one(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+        ingredient_id: i32,
+    ) -> Result<Ingredient, sqlx::Error> {
+        sqlx::query_as(
+            r#"
+			SELECT 
+				id as ingredient_id, 
+				account_id,
+				name, 
+				unit, 
+				purchase_unit,
+				purchase_unit as quantity
+			FROM ingredient
+			WHERE account_id = $1 OR account_id IS NULL AND id = $2
+			"#,
+        )
+        .bind(account_id)
+        .bind(ingredient_id)
+        .fetch_one(pool)
+        .await
+    }
+
+    // Creates a new ingredient.
+    pub async fn create(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+        input: IngredientInput,
+    ) -> Result<Ingredient, sqlx::Error> {
+        let (id,): (i32,) = sqlx::query_as(
+            r#"
+			INSERT INTO ingredient (account_id, name, unit, purchase_unit)
+			VALUES ($1, $2, $3, $4)
+			RETURNING ingredient.id
+			"#,
+        )
+        .bind(account_id)
+        .bind(input.name)
+        .bind(input.unit)
+        .bind(input.purchase_unit)
+        .fetch_one(pool)
+        .await?;
+        Self::find_one(pool, account_id, id).await
+    }
+}

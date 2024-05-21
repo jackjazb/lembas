@@ -1,0 +1,29 @@
+meta {
+  name: update-recipe
+  type: http
+  seq: 10
+}
+
+post {
+  url: http://127.0.0.1:3000/recipes/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "Update Bread1",
+    "portions": 2,  
+    "steps":[
+      "Mix dough",
+      "Ferment for 6 hours",
+      "Shape",
+      "Prove for 6 hours",
+      "Bake"
+    ],
+    "ingredients": [
+      [1, 1000],
+      [2, 800]
+    ]
+  }
+}

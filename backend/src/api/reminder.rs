@@ -7,7 +7,7 @@ use tracing::error;
 
 use crate::service::reminder::{Reminder, ReminderInput};
 
-use super::ServerError;
+use super::router::ServerError;
 
 /// Handler for fetching all recipes for a user.
 pub async fn get_reminders(
@@ -23,6 +23,7 @@ pub async fn get_reminders(
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
+
 /// Handler for fetching all recipes for a user.
 pub async fn get_reminder(
     State(pool): State<sqlx::PgPool>,

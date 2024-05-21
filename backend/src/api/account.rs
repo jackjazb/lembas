@@ -7,7 +7,7 @@ use tracing::error;
 
 use crate::service::account::Account;
 
-use super::ServerError;
+use super::router::ServerError;
 
 /// Handler for fetching all user accounts.
 pub async fn get_accounts(
