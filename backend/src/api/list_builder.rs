@@ -17,7 +17,7 @@ use super::{day::DayRangeParams, router::ServerError};
 /// For example, for Flour, which has a purhcase unit of 1500.0:
 /// 	- quantity = 500.0
 /// 	- purchase_unit = 1 (i.e. 1 * 1500.0)
-#[derive(serde::Serialize, Debug)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct IngredientPurchase {
     ingredient: Ingredient,
     units: i32,
@@ -48,7 +48,6 @@ async fn build_list(
     // 1. Query the day table to obtain the ingredients used on each day.
     let days = Ingredient::find_used_in_range(pool, account_id, from.clone(), to.clone()).await?;
 
-    dbg!(&days);
     // 2. Identify the longest lived ingredient used.
     let longest_shelf_life: i32 = days
         .iter()
@@ -67,14 +66,11 @@ async fn build_list(
         from.clone() - chrono::Duration::days(1),
     )
     .await?;
-    dbg!(&past_days);
 
     // 4. Get the amount of each ingredient that will have some surplus in the current range.
-    let mut surplus = utils::calculate_surplus_on_date(past_days.clone(), from.clone());
-    dbg!(&surplus);
+    let surplus = utils::calculate_surplus_on_date(past_days.clone(), from.clone());
 
-    // 5. For each ingredient, check the current surplus is enough.
-    // Note - could we reuse calculate surplus somehow?
+    // 5. For each ingredient, check the current surplus is enough, otherwise add purchases.
 
     let mut purchases_needed: HashMap<i32, IngredientPurchase> = HashMap::new();
 
@@ -83,22 +79,28 @@ async fn build_list(
         .flat_map(|(_, i)| i)
         .collect::<Vec<&Ingredient>>()
     {
-        // Check if we've encountered the ingredient yet.
-        if let Some(ingredient_purchase) = purchases_needed.get_mut(&ingredient.ingredient_id) {
-            ingredient_purchase.ingredient.quantity = Some(
-                ingredient_purchase.ingredient.quantity.unwrap_or(0.0)
-                    + ingredient.quantity.unwrap(),
-            );
-        }
-        // If not, set the initial amount to the surplus at the start of the week.
-        // A negative value is used so that the surplus is 'used up' before purchases are needed.
-        else {
-            let initial_amount: Option<f64> = match surplus.get(&ingredient.ingredient_id) {
-                Some(ingredient) => Some(-ingredient.quantity.unwrap_or(0.0)),
-                None => Some(0.0),
+        // If this is the first time we've encountered the ingredient, add a new entry.
+        if !purchases_needed.contains_key(&ingredient.ingredient_id) {
+            let mut ingredient_entry = ingredient.clone().zeroed_clone();
+
+            // Subtract any existing surplus from the initial amount needed, otherwise start at 0.
+            ingredient_entry.quantity = match surplus.get(&ingredient_entry.ingredient_id) {
+                Some(i) => -i.quantity,
+                None => 0.0,
             };
-            purchases_needed
+
+            let purchase = IngredientPurchase {
+                ingredient: ingredient_entry,
+                units: 0,
+            };
+            purchases_needed.insert(ingredient.ingredient_id, purchase);
         }
+
+        let current_purchase = purchases_needed.get_mut(&ingredient.ingredient_id).unwrap();
+        current_purchase.ingredient.quantity += ingredient.quantity;
+
+        // Calculate the number of purchase_units required: quantity/purhcase_unit
+        current_purchase.units = current_purchase.ingredient.calculate_units_required();
     }
-    todo!()
+    Ok(purchases_needed.values().cloned().collect())
 }

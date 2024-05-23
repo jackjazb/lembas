@@ -35,7 +35,7 @@ impl Reminder {
 				ingredient.unit, 
 				ingredient.purchase_unit,
 				ingredient.life,
-				NULL as quantity
+				ingredient.purchase_unit as quantity
 			FROM reminder
 			LEFT JOIN ingredient ON ingredient.id = ingredient_id
 			WHERE reminder.account_id = $1
@@ -64,7 +64,7 @@ impl Reminder {
 				ingredient.unit, 
 				ingredient.purchase_unit,
 				ingredient.life,
-				NULL as quantity
+				ingredient.purchase_unit as quantity
 			FROM reminder
 			LEFT JOIN ingredient ON ingredient.id = ingredient_id
 			WHERE reminder.account_id = $1 AND reminder.id = $2

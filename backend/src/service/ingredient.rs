@@ -11,7 +11,7 @@ pub struct Ingredient {
     pub unit: String,
     pub purchase_unit: f64,
     pub life: i32,
-    pub quantity: Option<f64>,
+    pub quantity: f64,
 }
 
 /// Allows the creation of user ingredients.
@@ -74,8 +74,7 @@ where
         let unit = decoder.try_decode::<String>()?;
         let purchase_unit = decoder.try_decode::<f64>()?;
         let life = decoder.try_decode::<i32>()?;
-        // Same here for f64:
-        let quantity = decoder.try_decode::<f64>().ok();
+        let quantity = decoder.try_decode::<f64>()?;
         ::std::result::Result::Ok(Ingredient {
             ingredient_id,
             account_id: user_id,
@@ -99,6 +98,20 @@ impl PgHasArrayType for Ingredient {
 }
 
 impl Ingredient {
+    /// Returns a clone of the ingredient with quantity set to 0.
+    pub fn zeroed_clone(self) -> Self {
+        let mut clone = self.clone();
+        clone.quantity = 0.0;
+        clone
+    }
+
+    /// Calculate the number of purchase units required to fulfil the desired quantity.
+    pub fn calculate_units_required(&self) -> i32 {
+        if self.quantity <= 0.0 || self.purchase_unit <= 0.0 {
+            return 0;
+        }
+        return (self.quantity / self.purchase_unit) as i32;
+    }
     /// Fetches a single ingredient by ID.
     pub async fn find_one(
         pool: &sqlx::PgPool,
