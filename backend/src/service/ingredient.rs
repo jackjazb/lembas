@@ -1,15 +1,17 @@
 use sqlx::postgres::{PgHasArrayType, PgTypeInfo};
 
+use super::utils;
+
 /// Represents an ingredient.
-#[derive(serde::Serialize, sqlx::FromRow, Debug)]
+#[derive(serde::Serialize, sqlx::FromRow, Debug, Clone)]
 pub struct Ingredient {
-    ingredient_id: i32,
-    account_id: Option<i32>,
-    name: String,
-    unit: String,
-    purchase_unit: f64,
-    life: i32,
-    quantity: Option<f64>,
+    pub ingredient_id: i32,
+    pub account_id: Option<i32>,
+    pub name: String,
+    pub unit: String,
+    pub purchase_unit: f64,
+    pub life: i32,
+    pub quantity: Option<f64>,
 }
 
 /// Allows the creation of user ingredients.
@@ -20,6 +22,9 @@ pub struct IngredientInput {
     purchase_unit: f64,
     life: i32,
 }
+
+// Represents a list of ingredients used on a day.
+pub type DayIngredients = (chrono::NaiveDate, Vec<Ingredient>);
 
 /// These must be manually implemented to work around the lack of support for Option.
 impl ::sqlx::Type<::sqlx::Postgres> for Ingredient {
@@ -69,7 +74,7 @@ where
         let unit = decoder.try_decode::<String>()?;
         let purchase_unit = decoder.try_decode::<f64>()?;
         let life = decoder.try_decode::<i32>()?;
-        // Same here:
+        // Same here for f64:
         let quantity = decoder.try_decode::<f64>().ok();
         ::std::result::Result::Ok(Ingredient {
             ingredient_id,
@@ -94,7 +99,7 @@ impl PgHasArrayType for Ingredient {
 }
 
 impl Ingredient {
-    // Fetches a single ingredient by ID.
+    /// Fetches a single ingredient by ID.
     pub async fn find_one(
         pool: &sqlx::PgPool,
         account_id: i32,
@@ -120,7 +125,59 @@ impl Ingredient {
         .await
     }
 
-    // Creates a new ingredient.
+    /// Fetches all ingredients
+    pub async fn find_all(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+    ) -> Result<Vec<Ingredient>, sqlx::Error> {
+        sqlx::query_as(
+            r#"
+			SELECT 
+				id as ingredient_id, 
+				account_id,
+				name, 
+				unit, 
+				purchase_unit,
+				life,
+				purchase_unit as quantity
+			FROM ingredient
+			WHERE account_id = $1 OR account_id IS NULL
+			"#,
+        )
+        .bind(account_id)
+        .fetch_all(pool)
+        .await
+    }
+
+    /// Searches over ingredient names.
+    pub async fn search(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+        text: String,
+    ) -> Result<Vec<Ingredient>, sqlx::Error> {
+        let pattern = format!("%{}%", text);
+
+        sqlx::query_as(
+            r#"
+			SELECT 
+				id as ingredient_id, 
+				account_id,
+				name, 
+				unit, 
+				purchase_unit,
+				life,
+				purchase_unit as quantity
+			FROM ingredient
+			WHERE account_id = $1 OR account_id IS NULL AND LOWER(name) LIKE LOWER($2)
+		"#,
+        )
+        .bind(account_id)
+        .bind(pattern)
+        .fetch_all(pool)
+        .await
+    }
+
+    /// Creates a new ingredient.
     pub async fn create(
         pool: &sqlx::PgPool,
         account_id: i32,
@@ -141,5 +198,83 @@ impl Ingredient {
         .fetch_one(pool)
         .await?;
         Self::find_one(pool, account_id, id).await
+    }
+
+    /// Creates a new ingredient.
+    pub async fn update(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+        ingredient_id: i32,
+        input: IngredientInput,
+    ) -> Result<Ingredient, sqlx::Error> {
+        sqlx::query(
+            r#"
+			UPDATE ingredient SET 
+				name = $3, 
+				unit = $4, 
+				purchase_unit = $5,
+				life = $6
+			WHERE account_id = $1 AND id = $2
+			"#,
+        )
+        .bind(account_id)
+        .bind(ingredient_id)
+        .bind(input.name)
+        .bind(input.unit)
+        .bind(input.purchase_unit)
+        .bind(input.life)
+        .execute(pool)
+        .await?;
+        Self::find_one(pool, account_id, ingredient_id).await
+    }
+
+    // Deletes a custom ingredient.
+    pub async fn delete(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+        ingredient_id: i32,
+    ) -> Result<(), sqlx::Error> {
+        utils::delete_entity(
+            pool,
+            utils::UserDeletable::Ingredient,
+            account_id,
+            ingredient_id,
+        )
+        .await
+    }
+
+    /// Returns a list of dates and the ingredients used on said date.
+    pub async fn find_used_in_range(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+        from: chrono::NaiveDate,
+        to: chrono::NaiveDate,
+    ) -> Result<Vec<DayIngredients>, sqlx::Error> {
+        println!("{from:?} {to:?}");
+        sqlx::query_as(
+            r#"
+		SELECT 
+			day.date,
+			ARRAY_AGG((
+				ingredient.id,
+				ingredient.account_id,
+				ingredient.name, 
+				ingredient.unit, 
+				ingredient.purchase_unit,
+				ingredient.life,
+				recipe_ingredient.quantity)) as "ingredients"
+		FROM day
+		LEFT JOIN recipe ON day.recipe_id = recipe.id
+		LEFT JOIN recipe_ingredient ON recipe_ingredient.recipe_id = recipe.id
+		LEFT JOIN ingredient ON recipe_ingredient.ingredient_id = ingredient.id
+		WHERE day.date BETWEEN $1 AND $2 AND recipe.account_id = $3
+		GROUP BY day.date
+		"#,
+        )
+        .bind(from)
+        .bind(to)
+        .bind(account_id)
+        .fetch_all(pool)
+        .await
     }
 }

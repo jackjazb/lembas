@@ -31,6 +31,21 @@ CREATE TABLE "public"."reminder" (
 	CONSTRAINT "reminder_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
+-- Create the days table.
+DROP TABLE IF EXISTS "day" CASCADE;
+
+DROP SEQUENCE IF EXISTS day_id_seq;
+
+CREATE SEQUENCE day_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."day" (
+	"id" integer DEFAULT nextval('day_id_seq') NOT NULL,
+	"account_id" integer NOT NULL,
+	"recipe_id" integer NOT NULL,
+	"date" date NOT NULL,
+	CONSTRAINT "day_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
 -- Create the recipes table.
 DROP TABLE IF EXISTS "recipe" CASCADE;
 
@@ -86,6 +101,12 @@ ALTER TABLE
 	ONLY "public"."ingredient"
 ADD
 	CONSTRAINT "fk-ingredient-account" FOREIGN KEY (account_id) REFERENCES "account"(id) ON DELETE CASCADE NOT DEFERRABLE;
+
+-- Day/Account foreign key.
+ALTER TABLE
+	ONLY "public"."day"
+ADD
+	CONSTRAINT "fk-day-account" FOREIGN KEY (account_id) REFERENCES "account"(id) ON DELETE CASCADE NOT DEFERRABLE;
 
 -- Reminder/Ingredient foreign key.
 ALTER TABLE

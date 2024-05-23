@@ -1,13 +1,13 @@
-use super::ingredient::Ingredient;
+use super::{ingredient::Ingredient, utils};
 
 /// Represents a recipe belonging to a user.
 #[derive(sqlx::FromRow, serde::Serialize, Debug)]
 pub struct Recipe {
-    id: i32,
-    title: String,
-    portions: i32,
-    steps: Vec<String>,
-    ingredients: Vec<Ingredient>,
+    pub recipe_id: i32,
+    pub title: String,
+    pub portions: i32,
+    pub steps: Vec<String>,
+    pub ingredients: Option<Vec<Ingredient>>,
 }
 
 /// Allows the creation of recipes.
@@ -30,7 +30,7 @@ impl Recipe {
         sqlx::query_as(
             r#"
 			SELECT 
-				recipe.id,
+				recipe.id as recipe_id,
 				recipe.title,
 				recipe.portions,
 				recipe.steps,
@@ -66,7 +66,7 @@ impl Recipe {
         sqlx::query_as(
             r#"
 			SELECT 
-				recipe.id,
+				recipe.id as recipe_id,
 				recipe.title,
 				recipe.portions,
 				recipe.steps,
@@ -181,5 +181,14 @@ impl Recipe {
 
         // Return the updated recipe
         Self::find_one(pool, account_id, recipe_id).await
+    }
+
+    /// Delete a recipe by ID.
+    pub async fn delete(
+        pool: &sqlx::PgPool,
+        account_id: i32,
+        recipe_id: i32,
+    ) -> Result<(), sqlx::Error> {
+        utils::delete_entity(pool, utils::UserDeletable::Recipe, account_id, recipe_id).await
     }
 }

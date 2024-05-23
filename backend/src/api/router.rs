@@ -5,7 +5,7 @@ use axum::{
     http::StatusCode,
     middleware::{self, Next},
     response::Response,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 
 use sqlx::postgres::PgPoolOptions;
@@ -14,8 +14,13 @@ use tracing::info;
 use crate::{
     api::{
         account::{get_account, get_accounts},
-        ingredient::{create_ingredient, get_ingredient},
-        recipe::{create_recipe, get_recipe, get_recipes, update_recipe},
+        day::{create_day, delete_day, get_days},
+        ingredient::{
+            create_ingredient, delete_ingredient, get_ingredient, get_ingredients,
+            update_ingredient,
+        },
+        list_builder::get_list_for_range,
+        recipe::{create_recipe, delete_recipe, get_recipe, get_recipes, update_recipe},
         reminder::{create_reminder, get_reminder, get_reminders},
     },
     service::devdata::load_data,
@@ -57,11 +62,22 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
         .route("/accounts", get(get_accounts))
         .route("/accounts/:id", get(get_account))
         .route("/recipes", get(get_recipes).post(create_recipe))
-        .route("/recipes/:id", get(get_recipe).post(update_recipe))
+        .route(
+            "/recipes/:id",
+            get(get_recipe).post(update_recipe).delete(delete_recipe),
+        )
         .route("/reminders", get(get_reminders).post(create_reminder))
         .route("/reminders/:id", get(get_reminder))
-        .route("/ingredients", post(create_ingredient))
-        .route("/ingredients/:id", get(get_ingredient))
+        .route("/ingredients", post(create_ingredient).get(get_ingredients))
+        .route(
+            "/ingredients/:id",
+            get(get_ingredient)
+                .delete(delete_ingredient)
+                .post(update_ingredient),
+        )
+        .route("/days", get(get_days).post(create_day))
+        .route("/days/:id", delete(delete_day))
+        .route("/list", get(get_list_for_range))
         .layer(middleware::from_fn(auth_middleware))
         .with_state(pool);
     let listener = tokio::net::TcpListener::bind(&server_url).await?;

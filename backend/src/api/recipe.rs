@@ -40,6 +40,7 @@ pub async fn get_recipe(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
+/// Handler for creating a recipe
 pub async fn create_recipe(
     State(pool): State<sqlx::PgPool>,
     Extension(account_id): Extension<i32>,
@@ -55,6 +56,7 @@ pub async fn create_recipe(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
+/// Handler for updating a recipe
 pub async fn update_recipe(
     State(pool): State<sqlx::PgPool>,
     Extension(account_id): Extension<i32>,
@@ -68,5 +70,21 @@ pub async fn update_recipe(
 
     result
         .map(Json)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
+/// Handler for deleting a recipe
+pub async fn delete_recipe(
+    State(pool): State<sqlx::PgPool>,
+    Extension(account_id): Extension<i32>,
+    Path(recipe_id): Path<i32>,
+) -> Result<StatusCode, ServerError> {
+    let result = Recipe::delete(&pool, account_id, recipe_id).await;
+    if result.is_err() {
+        error!("{:?}", result);
+    }
+
+    result
+        .map(|_| StatusCode::NO_CONTENT)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }

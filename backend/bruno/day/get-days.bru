@@ -1,0 +1,16 @@
+meta {
+  name: get-days
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://127.0.0.1:3000/days?from=2024-04-01&to=2024-06-01
+  body: none
+  auth: none
+}
+
+query {
+  from: 2024-04-01
+  to: 2024-06-01
+}

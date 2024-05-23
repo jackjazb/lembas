@@ -1,0 +1,20 @@
+meta {
+  name: update-ingredient
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://127.0.0.1:3000/ingredients/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "FlourUpdate",
+    "unit": "g",
+    "purchase_unit": 1000,
+    "life": 265
+  }
+}
