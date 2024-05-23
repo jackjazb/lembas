@@ -1,23 +1,35 @@
 # Use postgres/example user/password credentials
-version: '3.1'
-
 services:
-
   db:
     image: postgres
-    restart: always
+    restart: unless-stopped
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: example
+    network_mode: "host"
     ports:
       - 5432:5432
 
   adminer:
     image: adminer
-    restart: always
+    restart: unless-stopped
+    network_mode: "host"
     ports:
       - 8080:8080
+
+  lembas:
+    build: .
+    depends_on:
+      - db
+    env_file:
+      - path: ./.env
+    network_mode: "host"
+    profiles:
+      - prod
+    ports:
+      - 3000:3000
+
 volumes:
   pgdata:
     external: true

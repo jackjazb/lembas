@@ -39,6 +39,7 @@ pub async fn get_list_for_range(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
+// Builds a shopping list for a range of days, taking into account ingredients left over from previous weeks' recipes.
 async fn build_list(
     pool: &sqlx::PgPool,
     account_id: i32,
@@ -89,11 +90,13 @@ async fn build_list(
                 None => 0.0,
             };
 
-            let purchase = IngredientPurchase {
-                ingredient: ingredient_entry,
-                units: 0,
-            };
-            purchases_needed.insert(ingredient.ingredient_id, purchase);
+            purchases_needed.insert(
+                ingredient.ingredient_id,
+                IngredientPurchase {
+                    ingredient: ingredient_entry,
+                    units: 0,
+                },
+            );
         }
 
         let current_purchase = purchases_needed.get_mut(&ingredient.ingredient_id).unwrap();

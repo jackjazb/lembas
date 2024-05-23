@@ -1,14 +1,21 @@
 # lembas-backend
 
 Provides the API for the lembas recipe service.
-
-## Development
-
 This project uses `cargo`. Use `cargo r` to run the server binary.
+
+## Running with Docker
+
+For development, a Postgres instance and admin UI is provided by the default profile:
+
+- `docker compose up -d`.
+
+The API service itself is available on the `prod` profile:
+
+- `docker compose --profile prod up -d --build`
 
 ## Endpoints
 
-Examples for each endpoint are available in [./bruno](./bruno/), and can be read using the Bruno API client.
+Examples for each endpoint are available in [./bruno](./bruno/), and can be read using the Bruno API client. Dates are in ISO format, i.e. `YYYY-MM-DD`.
 
 |Endpoint|Actions
 |-|-
@@ -32,6 +39,7 @@ Examples for each endpoint are available in [./bruno](./bruno/), and can be read
 |`/reminders`             |`GET` Returns all ingredient reminders for the current user
 |                         |`POST` Creates an ingredient reminder for the current user
 |`/reminders/:id`         |`GET` Returns a single reminder
+|`/list/from=&to=`        |`GET` Returns a shopping list for the user's planned meals from `from` to `to`
 
 > Note: In general, deeply nested entities are not loaded, and clients should access such entities directly. For example, the `recipe` entity contained in a `day` will not contain ingredients - to access these, query `/recipes` with the ID.
 
@@ -63,5 +71,5 @@ Examples for each endpoint are available in [./bruno](./bruno/), and can be read
   - Create ✓
   - Delete ✓
 - Shopping List
-  - Fetch range
+  - Fetch range ✓
 - Recipe Scraping
