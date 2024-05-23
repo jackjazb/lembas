@@ -1,1 +1,0 @@
-INSERT INTO useraccount (id, idp_id) VALUES (1, 'abc')
