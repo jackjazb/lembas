@@ -1,7 +1,20 @@
 <script lang="ts">
-	import { ROUTES, type Route } from "$lib/routes";
+	import { page } from "$app/stores";
+	import IconApple from "$lib/components/icons/IconApple.svelte";
+	import IconClipboard from "$lib/components/icons/IconClipboard.svelte";
+	import IconPackage from "$lib/components/icons/IconPackage.svelte";
+	import Toast from "$lib/components/Toast.svelte";
+	import { toast } from "$lib/stores";
+	import { getBasePath } from "$lib/utils";
+	import { type ComponentType } from "svelte";
+	import { fade } from "svelte/transition";
 
-	export let active: Route | undefined;
+	$: activeBasePath = getBasePath($page.url.pathname);
+	const routeIcons: Record<string, ComponentType> = {
+		"/recipes": IconApple,
+		"/mealplan": IconClipboard,
+		"/ingredients": IconPackage,
+	};
 </script>
 
 <!--
@@ -10,15 +23,21 @@
 	If the active route is undefined, no routes are highlighted.
 	
 -->
+<div class="mb-12 m4 toast" transition:fade>
+	{#if $toast}
+		<Toast toast={$toast} />
+	{/if}
+</div>
+
 <div class="btm-nav">
-	{#each Object.values(ROUTES) as route}
-		{#if active && route.url === active.url}
-			<a href={route.url} class="active">
-				<svelte:component this={route.icon} filled />
+	{#each Object.keys(routeIcons) as path}
+		{#if path === activeBasePath}
+			<a href={path} class="active">
+				<svelte:component this={routeIcons[path]} filled />
 			</a>
 		{:else}
-			<a href={route.url}>
-				<svelte:component this={route.icon} />
+			<a href={path}>
+				<svelte:component this={routeIcons[path]} />
 			</a>
 		{/if}
 	{/each}

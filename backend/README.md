@@ -13,6 +13,11 @@ The API service itself is available on the `prod` profile:
 
 - `docker compose --profile prod up -d --build`
 
+## Development
+
+- Setting ENV to 'dev' in .env runs the server in dev mode. This will clear the database on startup and insert some sample data.
+- If `cargo-watch` is installed, the server can be automatically recompiled and run with `cargo watch -x "r -r"`
+
 ## Endpoints
 
 Examples for each endpoint are available in [./bruno](./bruno/), and can be read using the Bruno API client. Dates are in ISO format, i.e. `YYYY-MM-DD`.

@@ -5,7 +5,11 @@ import typography from '@tailwindcss/typography';
 export default {
   content: ['./src/**/*.{html,js,svelte,ts}'],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        serif: ['Adamina', 'ui-serif'],
+      }
+    },
   },
   plugins: [
     typography,

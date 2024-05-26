@@ -1,7 +1,9 @@
-<h1 class="text-3xl font-bold">lembas</h1>
-<div class="flex flex-row gap-8">
-	<h1>recipe div</h1>
-	<p>this is a recipe</p>
+<div class="hero min-h-screen bg-base-200">
+	<div class="hero-content text-center">
+		<div class="max-w-md">
+			<h1 class="text-5xl font-bold font-serif">lembas</h1>
+			<p class="py-6">Recipes with superpowers.</p>
+			<a class="btn btn-primary" href="/login">Log In</a>
+		</div>
+	</div>
 </div>
-
-<button class="btn">test</button>

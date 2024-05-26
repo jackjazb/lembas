@@ -2,13 +2,14 @@ use std::{env, error::Error};
 
 use axum::{
     extract::Request,
-    http::StatusCode,
+    http::{self, StatusCode},
     middleware::{self, Next},
     response::Response,
     routing::{delete, get, post},
 };
 
 use sqlx::postgres::PgPoolOptions;
+use tower_http::cors;
 use tracing::info;
 
 use crate::{
@@ -56,6 +57,12 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
         info!("loaded development data")
     }
 
+    // Set up CORS.
+    let cors = cors::CorsLayer::new()
+        .allow_methods([http::Method::GET, http::Method::POST, http::Method::DELETE])
+        .allow_headers([http::header::AUTHORIZATION])
+        .allow_origin(cors::Any);
+
     // Set up the main app router.
     let app = axum::Router::new()
         .route("/", get(health_check))
@@ -78,6 +85,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
         .route("/days", get(get_days).post(create_day))
         .route("/days/:id", delete(delete_day))
         .route("/list", get(get_list_for_range))
+        .layer(tower::ServiceBuilder::new().layer(cors))
         .layer(middleware::from_fn(auth_middleware))
         .with_state(pool);
     let listener = tokio::net::TcpListener::bind(&server_url).await?;

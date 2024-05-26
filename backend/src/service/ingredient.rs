@@ -8,7 +8,7 @@ pub struct Ingredient {
     pub ingredient_id: i32,
     pub account_id: Option<i32>,
     pub name: String,
-    pub unit: String,
+    pub unit: Option<String>,
     pub purchase_unit: f64,
     pub life: i32,
     pub quantity: f64,
@@ -44,8 +44,8 @@ where
     String: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
     String: ::sqlx::types::Type<::sqlx::Postgres>,
     // unit
-    String: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
-    String: ::sqlx::types::Type<::sqlx::Postgres>,
+    Option<String>: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
+    Option<String>: ::sqlx::types::Type<::sqlx::Postgres>,
     // purchase_unit
     f64: ::sqlx::decode::Decode<'r, ::sqlx::Postgres>,
     f64: ::sqlx::types::Type<::sqlx::Postgres>,
@@ -71,7 +71,7 @@ where
         // Instead of automatically trying to decode Option, we assume a failed i32 decode is NULL.
         let user_id = decoder.try_decode::<i32>().ok();
         let name = decoder.try_decode::<String>()?;
-        let unit = decoder.try_decode::<String>()?;
+        let unit = decoder.try_decode::<String>().ok();
         let purchase_unit = decoder.try_decode::<f64>()?;
         let life = decoder.try_decode::<i32>()?;
         let quantity = decoder.try_decode::<f64>()?;
