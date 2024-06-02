@@ -5,7 +5,7 @@ export interface Recipe {
 	title: string,
 	portions: number,
 	steps: string[];
-	ingredients: Ingredient[];
+	ingredients: Ingredient[] | null;
 }
 
 export async function getRecipes(): Promise<Recipe[]> {

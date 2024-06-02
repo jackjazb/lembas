@@ -1,8 +1,8 @@
 export interface Ingredient {
 	ingredient_id: number,
-	account_id?: number,
+	account_id: number | null,
 	name: string,
-	unit?: string,
+	unit: string | null,
 	purchase_unit: number,
 	life: number,
 	quantity: number;

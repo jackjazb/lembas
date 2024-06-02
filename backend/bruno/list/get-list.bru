@@ -5,7 +5,12 @@ meta {
 }
 
 get {
-  url: http://127.0.0.1:3000/list
+  url: http://127.0.0.1:3000/list?from=2024-04-01&to=2025-01-01
   body: none
   auth: none
+}
+
+query {
+  from: 2024-04-01
+  to: 2025-01-01
 }

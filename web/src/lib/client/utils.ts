@@ -5,9 +5,13 @@ import { PUBLIC_API_URL } from "$env/static/public";
  * 
  * @param uri The URI to fetch.
  */
-export async function get(uri: string) {
+export async function get(uri: string, query?: URLSearchParams) {
+	const url = new URL(`${PUBLIC_API_URL}${uri}`);
+	if (query) {
+		url.search = query.toString();
+	}
 	try {
-		const res = await fetch(`${PUBLIC_API_URL}${uri}`, {
+		const res = await fetch(url, {
 			headers: {
 				'Authorization': await resolveAuthHeader(),
 				'Accept': 'application/json'

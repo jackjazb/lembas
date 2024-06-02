@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CardList from "$lib/components/CardList.svelte";
 	import RecipeCard from "$lib/components/RecipeCard.svelte";
 	import IconAdd from "$lib/components/icons/IconAdd.svelte";
 	import { topBarProps } from "$lib/stores.js";
@@ -14,8 +15,8 @@
 	export let data;
 </script>
 
-<div class="flex gap-4 flex-col">
+<CardList>
 	{#each data.recipes as recipe}
 		<RecipeCard {recipe} />
 	{/each}
-</div>
+</CardList>

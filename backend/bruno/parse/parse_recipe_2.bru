@@ -1,0 +1,15 @@
+meta {
+  name: parse_recipe_2
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://127.0.0.1:3000/parse?url=https://realfood.tesco.com/recipes/chicken-korma-curry.html
+  body: none
+  auth: none
+}
+
+query {
+  url: https://realfood.tesco.com/recipes/chicken-korma-curry.html
+}

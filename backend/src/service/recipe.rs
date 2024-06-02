@@ -14,10 +14,10 @@ pub struct Recipe {
 /// Note that the members of each ingredient are an ID and quantity respectively.
 #[derive(serde::Deserialize, Debug)]
 pub struct RecipeInput {
-    title: String,
-    portions: i32,
-    steps: Vec<String>,
-    ingredients: Vec<(i32, f64)>,
+    pub title: String,
+    pub portions: i32,
+    pub steps: Vec<String>,
+    pub ingredients: Vec<(i32, f64)>,
 }
 
 impl Recipe {

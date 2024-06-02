@@ -33,9 +33,11 @@
 	<h1>{data.recipe.title}</h1>
 	<h2>Ingredients</h2>
 	<ul>
-		{#each data.recipe.ingredients as ingredient}
-			<li>{formatIngredient(ingredient)}</li>
-		{/each}
+		{#if data.recipe.ingredients}
+			{#each data.recipe.ingredients as ingredient}
+				<li>{formatIngredient(ingredient)}</li>
+			{/each}
+		{/if}
 	</ul>
 	<div class="divider" />
 	<h2>Steps</h2>

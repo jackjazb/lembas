@@ -1,4 +1,4 @@
-use std::{env, error::Error};
+use std::{env, error::Error, process::exit};
 
 use axum::{
     extract::Request,
@@ -22,6 +22,7 @@ use crate::{
         },
         list_builder::get_list_for_range,
         recipe::{create_recipe, delete_recipe, get_recipe, get_recipes, update_recipe},
+        recipe_parser::{parse_handler, parse_recipe},
         reminder::{create_reminder, get_reminder, get_reminders},
     },
     service::devdata::load_data,
@@ -85,6 +86,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
         .route("/days", get(get_days).post(create_day))
         .route("/days/:id", delete(delete_day))
         .route("/list", get(get_list_for_range))
+        .route("/parse", get(parse_handler))
         .layer(tower::ServiceBuilder::new().layer(cors))
         .layer(middleware::from_fn(auth_middleware))
         .with_state(pool);
