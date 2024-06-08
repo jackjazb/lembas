@@ -19,7 +19,7 @@
 
 	$topBarProps = {
 		title: data.recipe.title,
-		backURL: "/recipes",
+		backEnabled: true,
 		actions: [
 			{
 				icon: IconDelete,

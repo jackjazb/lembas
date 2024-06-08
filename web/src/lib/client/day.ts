@@ -1,5 +1,5 @@
 import type { Recipe } from "$lib/client/recipe";
-import { get } from "$lib/client/utils";
+import { del, get, post } from "$lib/client/utils";
 import { toISOString } from "$lib/utils";
 
 export interface Day {
@@ -8,6 +8,12 @@ export interface Day {
 	date: string;
 }
 
+export interface DayInput {
+	recipe_id: string,
+	date: string;
+}
+
+
 export async function getDays(from: Date, to: Date): Promise<Day[]> {
 	const params = {
 		from: toISOString(from),
@@ -15,6 +21,18 @@ export async function getDays(from: Date, to: Date): Promise<Day[]> {
 	};
 	const query = new URLSearchParams(params);
 	return await get('/days', query);
+}
+
+export async function createDay(recipe: Recipe, date: Date): Promise<void> {
+	const payload: DayInput = {
+		recipe_id: recipe.recipe_id,
+		date: toISOString(date)
+	};
+	await post('/days', JSON.stringify(payload));
+}
+
+export async function deleteDay(id: string): Promise<void> {
+	await del(`/days/${id}`);
 }
 
 export function groupByDate(days: Day[]): Record<string, Day[]> {

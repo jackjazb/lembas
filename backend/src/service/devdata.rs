@@ -39,8 +39,9 @@ pub async fn load_data(pool: &PgPool) -> Result<(), sqlx::Error> {
 
 		INSERT INTO "day" ("id", "account_id", "date", "recipe_id") VALUES
 			('1', '1', '2024-02-01', '1'),
-			('2', '1', '2024-04-01', '1');
-		SELECT setval('day_id_seq', 2);
+			('2', '1', '2024-04-01', '1'),
+			('3', '1', now(), '1');
+		SELECT setval('day_id_seq', 3);
 		"#,
     )
     .execute(pool)

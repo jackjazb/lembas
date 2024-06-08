@@ -3,6 +3,6 @@
 
 	$topBarProps = {
 		title: "Add Recipe",
-		backURL: "/recipes",
+		backEnabled: true,
 	};
 </script>

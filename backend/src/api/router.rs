@@ -61,7 +61,7 @@ pub async fn start() -> Result<(), Box<dyn Error>> {
     // Set up CORS.
     let cors = cors::CorsLayer::new()
         .allow_methods([http::Method::GET, http::Method::POST, http::Method::DELETE])
-        .allow_headers([http::header::AUTHORIZATION])
+        .allow_headers([http::header::AUTHORIZATION, http::header::CONTENT_TYPE])
         .allow_origin(cors::Any);
 
     // Set up the main app router.

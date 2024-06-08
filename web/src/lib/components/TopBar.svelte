@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from "$app/environment";
 	import IconBack from "$lib/components/icons/IconBack.svelte";
 	import type { ComponentType } from "svelte";
 
@@ -9,7 +10,7 @@
 	}
 
 	export let title: string;
-	export let backURL: string | undefined = undefined;
+	export let backEnabled: boolean = false;
 	export let actions: TopBarAction[] = [];
 </script>
 
@@ -24,8 +25,10 @@
 -->
 
 <div class="navbar bg-base-200">
-	{#if backURL}
-		<a class="btn btn-square" href={backURL}><IconBack /></a>
+	{#if backEnabled}
+		<button class="btn btn-square" on:click={() => history.back()}
+			><IconBack /></button
+		>
 	{/if}
 	<div class="flex-1">
 		<h1 class="text-xl font-bold m-2">{title}</h1>

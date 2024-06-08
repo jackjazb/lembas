@@ -38,7 +38,7 @@ export function addDays(date: Date, days: number): Date {
 /**
  * Returns a short version of a date's day.
  */
-export function getDayAbbr(date: Date) {
+export function getWeekdayShort(date: Date) {
 	const shortDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 	return shortDays[date.getDay()];
 }
@@ -46,9 +46,9 @@ export function getDayAbbr(date: Date) {
 /**
  * Returns a short version of a date's day.
  */
-export function getDay(date: Date) {
-	const shortDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-	return shortDays[date.getDay()];
+export function getWeekday(date: Date) {
+	const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	return days[date.getDay()];
 }
 
 /**
@@ -67,4 +67,30 @@ export function sortISOStrings(strings: string[]) {
 			: new Date(b) < new Date(a) ? 1
 				: 0;
 	});
+}
+
+/**
+ * Returns an appropriate suffix for a number.
+ */
+export function getSuffix(number: number) {
+	if (number > 3 && number < 21) return 'th';
+	switch (number % 10) {
+		case 1:
+			return 'st';
+		case 2:
+			return 'nd';
+		case 3:
+			return 'rd';
+		default:
+			return 'th';
+	}
+}
+
+/**
+ * Formats a date as e.g. "Wednesday 6th"
+ */
+export function formatDate(date: Date): string {
+	const suffix = getSuffix(date.getDate());
+	const weekday = getWeekday(date);
+	return `${weekday} ${date.getDate()}${suffix}`;
 }

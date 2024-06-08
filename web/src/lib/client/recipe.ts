@@ -15,5 +15,5 @@ export async function getRecipe(id: string): Promise<Recipe> {
 	return await get(`/recipes/${id}`);
 }
 export async function deleteRecipe(id: string): Promise<void> {
-	return await del(`/recipesa/${id}`);
+	return await del(`/recipes/${id}`);
 }

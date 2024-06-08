@@ -110,7 +110,7 @@ impl Ingredient {
         if self.quantity <= 0.0 || self.purchase_unit <= 0.0 {
             return 0;
         }
-        return (self.quantity / self.purchase_unit) as i32;
+        return (self.quantity / self.purchase_unit).ceil() as i32;
     }
     /// Fetches a single ingredient by ID.
     pub async fn find_one(

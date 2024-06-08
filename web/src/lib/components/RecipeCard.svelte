@@ -4,7 +4,7 @@
 	export let recipe: Recipe;
 </script>
 
-<div class="card w-full bg-base-100 shadow-xl">
+<div class="card bg-neutral w-full shadow-xl">
 	<figure>
 		<div class="bg-primary w-full h-20" />
 	</figure>
